@@ -1,0 +1,51 @@
+filter_matching_rows_between_two_textfile
+import csv
+
+# Define file paths
+sra_file_path = '/../../../ERR336_download/sra.txt'       # File containing SRA IDs
+url_file_path = '/../../../ERR336_download/sra_url.txt'      # File containing URLs
+output_file_path = '/../../../ERR336_download/filtered_urls.txt'  # File to store the filtered URLs
+
+def read_sra_ids(file_path):
+    """Read the SRA IDs from a file and return a set of IDs."""
+    with open(file_path, 'r') as file:
+        sra_ids = {line.strip() for line in file if line.strip()}
+    print(f"SRA IDs loaded: {sra_ids}")  # Debug statement
+    return sra_ids
+
+def filter_urls(sra_ids, url_file_path, output_file_path):
+    """Filter rows that contain any of the SRA IDs in the experiment_accession column and write to the output file."""
+    with open(url_file_path, 'r') as url_file, open(output_file_path, 'w', newline='') as output_file:
+        reader = csv.reader(url_file, delimiter='\t')
+        writer = csv.writer(output_file, delimiter='\t')
+        
+        # Write the header row
+        header = next(reader)
+        writer.writerow(header)
+        
+        # Find index of the 'experiment_accession' column
+        try:
+            experiment_accession_index = header.index('experiment_accession')
+        except ValueError:
+            print("The file does not contain the 'experiment_accession' column.")
+            return
+        
+        found_any = False
+        for row in reader:
+            if row[experiment_accession_index] in sra_ids:
+                writer.writerow(row)
+                found_any = True
+        
+        if not found_any:
+            print("No rows matched the SRA IDs.")  # Debug statement
+
+def main():
+    # Read SRA IDs
+    sra_ids = read_sra_ids(sra_file_path)
+    
+    # Filter URLs and write to the output file
+    filter_urls(sra_ids, url_file_path, output_file_path)
+    print(f"Filtered URLs written to {output_file_path}")
+
+if __name__ == "__main__":
+    main()
